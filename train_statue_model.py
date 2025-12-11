@@ -1,0 +1,117 @@
+"""
+Train a 'statue' sign classifier
+Uses template matching with all 11 features (flex1-5 + ax,ay,az + gx,gy,gz)
+"""
+
+import pandas as pd
+import numpy as np
+import pickle
+from datetime import datetime
+
+print("=" * 70)
+print(" 'STATUE' SIGN CLASSIFIER TRAINER")
+print("=" * 70)
+
+# Load dataset
+print("\n📂 Loading dataset...")
+data = pd.read_csv('statue_dataset_20251211_200629.csv')
+
+print(f"✅ Dataset loaded: {len(data)} samples, {data['trial_id'].max()} trials")
+print(f"   Sign: {data['sign_name'].iloc[0]}")
+
+# Extract features per trial
+def extract_trial_features(df, trial_id):
+    """Extract time series features for one trial"""
+    trial = df[df['trial_id'] == trial_id].sort_values('time_ms')
+    
+    # Get only MPU 6 sensor features (ignore random flex values)
+    features = np.column_stack([
+        trial['ax'].values,
+        trial['ay'].values,
+        trial['az'].values,
+        trial['gx'].values,
+        trial['gy'].values,
+        trial['gz'].values
+    ])
+    
+    return features
+
+# Create template from all trials
+print("\n🧠 Creating 'statue' sign template...")
+trials = []
+trial_ids = data['trial_id'].unique()
+
+for trial_id in trial_ids:
+    features = extract_trial_features(data, trial_id)
+    trials.append(features)
+
+# Resample all trials to same length (300 samples @ ~100Hz for 3 seconds)
+TARGET_LENGTH = 300
+trials_resampled = []
+for trial in trials:
+    # Simple linear resampling
+    indices = np.linspace(0, len(trial) - 1, TARGET_LENGTH)
+    resampled = np.array([trial[int(i)] for i in indices])
+    trials_resampled.append(resampled)
+
+# Create average template
+template = np.mean(trials_resampled, axis=0)
+
+print(f"✅ Template created: shape {template.shape}")
+print(f"   Features: accel (3) + gyro (3) = 6 MPU channels (flex ignored)")
+
+# Calculate statistics
+print("\n📊 Calculating similarity statistics...")
+
+def euclidean_distance(a, b):
+    """Simple Euclidean distance between two sequences"""
+    if len(a) != len(b):
+        indices = np.linspace(0, len(b) - 1, len(a))
+        b = np.array([b[int(i)] for i in indices])
+    return np.sqrt(np.sum((a - b) ** 2))
+
+# Distance of all trials to template
+distances = []
+for trial in trials_resampled:
+    dist = euclidean_distance(template, trial)
+    distances.append(dist)
+
+mean_dist = np.mean(distances)
+std_dist = np.std(distances)
+max_dist = np.max(distances)
+
+print(f"\n   Mean distance: {mean_dist:.2f}")
+print(f"   Std deviation: {std_dist:.2f}")
+print(f"   Max distance: {max_dist:.2f}")
+
+# Set threshold (mean + 2*std for ~95% confidence, minimum 0.1 for sensor noise)
+threshold = max(0.1, mean_dist + 2 * std_dist)
+print(f"\n🎯 Detection threshold: {threshold:.2f}")
+print(f"   (mean + 2*std for ~95% confidence, min 0.1 for noise tolerance)")
+
+# Test accuracy on training data
+correct = sum(1 for dist in distances if dist < threshold)
+accuracy = correct / len(distances) * 100
+print(f"\n✅ Training accuracy: {accuracy:.1f}% ({correct}/{len(distances)} trials)")
+
+# Save model
+model = {
+    'sign_name': 'statue',
+    'template': template,
+    'threshold': threshold,
+    'target_length': TARGET_LENGTH,
+    'mean_dist': mean_dist,
+    'std_dist': std_dist,
+    'num_trials': len(trial_ids),
+    'accuracy': accuracy,
+    'trained_on': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+}
+
+with open('statue_sign_model.pkl', 'wb') as f:
+    pickle.dump(model, f)
+
+print(f"\n💾 Model saved to: statue_sign_model.pkl")
+print("\n" + "=" * 70)
+print("✅ TRAINING COMPLETE!")
+print("=" * 70)
+print("\nNext step: Run 'test_statue_realtime.py' to test the model")

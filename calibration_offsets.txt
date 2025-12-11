@@ -1,0 +1,12 @@
+// MPU6050 Calibration Offsets
+// Generated: 2025-12-10 02:10:54
+
+// Gyroscope offsets (deg/s)
+float GX_OFFSET = 0.308192f;
+float GY_OFFSET = 0.587082f;
+float GZ_OFFSET = -0.043522f;
+
+// Accelerometer offsets (g)
+float AX_OFFSET = 0.076775f;
+float AY_OFFSET = -0.024893f;
+float AZ_OFFSET = 0.027786f;

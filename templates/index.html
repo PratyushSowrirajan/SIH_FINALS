@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Recognition</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .models-info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #555;
+        }
+
+        .display-area {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 60px 40px;
+            margin-bottom: 30px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 3px dashed #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .display-area.recording {
+            border-color: #ff6b6b;
+            background: #fff5f5;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .sign-text {
+            font-size: 5em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confidence {
+            font-size: 1.2em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .status {
+            text-align: center;
+            color: #999;
+            font-size: 1.2em;
+            font-style: italic;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+        }
+
+        .stop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .history {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .history-item {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-sign {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .history-details {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .error-message {
+            background: #ffe0e0;
+            color: #cc0000;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤟 Sign Language Recognition</h1>
+        <p class="subtitle">Real-time gesture to text converter</p>
+
+        <div class="models-info" id="modelsInfo">
+            <span id="modelsList">Loading models...</span>
+        </div>
+
+        <div class="display-area" id="displayArea">
+            <div class="status" id="statusText">Press START to begin recognition</div>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn" id="startBtn" onclick="startRecognition()">▶️ START</button>
+            <button class="stop-btn" id="stopBtn" onclick="stopRecognition()" disabled>⏹️ STOP</button>
+        </div>
+
+        <div class="history">
+            <div class="history-title">📝 Recognition History</div>
+            <div id="historyList">
+                <div class="status">No signs detected yet</div>
+            </div>
+        </div>
+
+        <div id="errorContainer"></div>
+    </div>
+
+    <script>
+        const socket = io();
+        let history = [];
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('models_loaded', function(data) {
+            document.getElementById('modelsList').innerHTML = 
+                `✅ ${data.count} models loaded: <strong>${data.models.join(', ')}</strong>`;
+        });
+
+        socket.on('recognition_started', function(data) {
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            showStatus('Ready to recognize signs...');
+        });
+
+        socket.on('recognition_stopped', function(data) {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('displayArea').classList.remove('recording');
+            showStatus('Recognition stopped');
+        });
+
+        socket.on('status', function(data) {
+            if (data.recording) {
+                document.getElementById('displayArea').classList.add('recording');
+                showStatus(`<span class="recording-indicator"></span>${data.message}`);
+            } else {
+                document.getElementById('displayArea').classList.remove('recording');
+                showStatus(data.message);
+            }
+        });
+
+        socket.on('sign_detected', function(data) {
+            document.getElementById('displayArea').classList.remove('recording');
+            document.getElementById('displayArea').innerHTML = `
+                <div class="sign-text">${data.sign}</div>
+                <div class="confidence">Confidence: ${data.confidence}%</div>
+                <div class="timestamp">${data.timestamp} • ${data.samples} samples</div>
+            `;
+
+            // Add to history
+            addToHistory(data);
+        });
+
+        socket.on('no_match', function(data) {
+            document.getElementById('displayArea').classList.remove('recording');
+            showStatus(`❓ ${data.message}`);
+        });
+
+        socket.on('error', function(data) {
+            showError(data.message);
+            document.getElementById('displayArea').classList.remove('recording');
+        });
+
+        function startRecognition() {
+            socket.emit('start_recognition');
+        }
+
+        function stopRecognition() {
+            socket.emit('stop_recognition');
+        }
+
+        function showStatus(message) {
+            document.getElementById('displayArea').innerHTML = 
+                `<div class="status">${message}</div>`;
+        }
+
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+            setTimeout(() => {
+                errorContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        function addToHistory(data) {
+            history.unshift(data);
+            if (history.length > 5) history.pop();
+
+            const historyHtml = history.map(item => `
+                <div class="history-item">
+                    <span class="history-sign">${item.sign}</span>
+                    <span class="history-details">${item.confidence}% • ${item.timestamp}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('historyList').innerHTML = historyHtml;
+        }
+    </script>
+</body>
+</html>

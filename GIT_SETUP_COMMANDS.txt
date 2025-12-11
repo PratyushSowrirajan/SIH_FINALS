@@ -1,0 +1,19 @@
+# Sign Language Recognition Project - Git Setup
+
+After restarting VS Code, run these commands in the terminal:
+
+# Initialize Git
+git init
+
+# Add all files
+git add .
+
+# Commit
+git commit -m "Initial commit - Sign language recognition with ESP32 and MPU6050"
+
+# Connect to your GitHub repository
+git remote add origin https://github.com/RoshanJ007/deliverables.git
+
+# Push to GitHub
+git branch -M main
+git push -u origin main
