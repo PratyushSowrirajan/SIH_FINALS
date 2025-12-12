@@ -26,7 +26,7 @@ class ExpressionMLTrainer:
         self.mp_drawing = mp.solutions.drawing_utils
         
         # Expression labels
-        self.expressions = ['happy', 'sad', 'angry', 'surprised', 'disgusted']
+        self.expressions = ['happy', 'sad', 'angry', 'surprised', 'sleepy']
         self.all_samples = []
         self.all_labels = []
         

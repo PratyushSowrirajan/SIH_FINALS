@@ -53,7 +53,7 @@ class ExpressionMLDetector:
             'sad': (255, 100, 100),
             'angry': (0, 0, 255),
             'surprised': (0, 165, 255),
-            'disgusted': (128, 0, 128),
+            'sleepy': (180, 180, 0),
         }
     
     def extract_features(self, landmarks):
