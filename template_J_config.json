@@ -1,0 +1,21 @@
+{
+  "sign": "J",
+  "threshold": 962.3562782900933,
+  "mean_distance": 678.5409818293645,
+  "std_distance": 141.90764823036446,
+  "num_trials": 40,
+  "features": [
+    "ax_right",
+    "ay_right",
+    "az_right",
+    "gx_right",
+    "gy_right",
+    "gz_right",
+    "ax_left",
+    "ay_left",
+    "az_left",
+    "gx_left",
+    "gy_left",
+    "gz_left"
+  ]
+}

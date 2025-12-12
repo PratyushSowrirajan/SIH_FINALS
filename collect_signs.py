@@ -9,7 +9,7 @@ import time
 import csv
 from datetime import datetime
 
-SERIAL_PORT = 'COM6'
+SERIAL_PORT = 'COM6'  # RIGHT glove (port changes on replug)
 BAUD_RATE = 115200
 DURATION_SECONDS = 3.0  # Record for 3 seconds per trial (static signs)
 
