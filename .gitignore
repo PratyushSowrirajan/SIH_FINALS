@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.pkl
+expression_data/
+expression_samples/
+face_samples/
+trained_models/
+ml_models/*.pkl
