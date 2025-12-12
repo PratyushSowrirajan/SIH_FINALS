@@ -32,7 +32,7 @@ class ExpressionSystem:
             2: 'sad',
             3: 'angry',
             4: 'surprised',
-            5: 'disgusted'
+            5: 'sleepy'
         }
         
         self.samples_dir = 'expression_samples'
@@ -229,7 +229,7 @@ class ExpressionSystem:
             else:
                 cv2.putText(frame, "PRESS 1-5 TO COLLECT EXPRESSION", 
                            (30, 45), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-                cv2.putText(frame, "1=HAPPY  2=SAD  3=ANGRY  4=SURPRISED  5=DISGUSTED", 
+                cv2.putText(frame, "1=HAPPY  2=SAD  3=ANGRY  4=SURPRISED  5=SLEEPY", 
                            (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
             
             cv2.imshow('Collect Expression Samples', frame)

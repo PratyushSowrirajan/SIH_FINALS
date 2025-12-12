@@ -31,7 +31,7 @@ class AccurateExpressionTrainer:
             ord('2'): 'sad', 
             ord('3'): 'angry',
             ord('4'): 'surprised',
-            ord('5'): 'disgusted'
+            ord('5'): 'sleepy'
         }
         
         self.expressions = list(self.key_to_expression.values())
